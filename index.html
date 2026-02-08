@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Store Screenshot Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ccc;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .preset-colors {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preset-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .preset-color:hover {
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #888;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .preview-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .preview-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .dimensions-badge {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .preview-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            width: 100%;
+            min-height: 500px;
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .text-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .text-controls input[type="text"] {
+            grid-column: 1 / -1;
+        }
+
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .range-value {
+            min-width: 40px;
+            text-align: right;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .device-specs {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .device-specs h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .device-specs ul {
+            list-style: none;
+            color: #888;
+        }
+
+        .device-specs li {
+            margin: 4px 0;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>App Store Screenshot Generator</h1>
+        <p class="subtitle">Create professional app store screenshots for iOS and Android</p>
+
+        <div class="main-layout">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Device / Platform</label>
+                    <select id="deviceSelect">
+                        <optgroup label="iOS - iPhone">
+                            <option value="iphone-6.9" selected>iPhone 6.9" (1320 x 2868) - Required</option>
+                            <option value="iphone-16-pro-max">iPhone 16 Pro Max (1260 x 2736)</option>
+                            <option value="iphone-6.7">iPhone 6.7" (1290 x 2796)</option>
+                            <option value="iphone-6.5">iPhone 6.5" (1284 x 2778)</option>
+                            <option value="iphone-5.5">iPhone 5.5" (1242 x 2208)</option>
+                        </optgroup>
+                        <optgroup label="iOS - iPad">
+                            <option value="ipad-13">iPad 13" (2064 x 2752)</option>
+                            <option value="ipad-12.9">iPad 12.9" (2048 x 2732)</option>
+                            <option value="ipad-11">iPad 11" (1668 x 2388)</option>
+                        </optgroup>
+                        <optgroup label="Android">
+                            <option value="android-phone">Android Phone (1080 x 2340)</option>
+                            <option value="android-tablet">Android Tablet (1600 x 2560)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Upload Screenshot</label>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📱</div>
+                        <div class="upload-text">Click or drag image here</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+
+                <div class="control-group">
+                    <label>Background Color</label>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="bgColor" value="#667eea">
+                        <div class="preset-colors">
+                            <div class="preset-color" style="background: linear-gradient(135deg, #667eea, #764ba2);" data-color="#667eea"></div>
+                            <div class="preset-color" style="background: linear-gradient(135deg, #f093fb, #f5576c);" data-color="#f093fb"></div>
+                            <div class="preset-color" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" data-color="#4facfe"></div>
+                            <div class="preset-color" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" data-color="#43e97b"></div>
+                            <div class="preset-color" style="background: #000000;" data-color="#000000"></div>
+                            <div class="preset-color" style="background: #ffffff;" data-color="#ffffff"></div>
+                        </div>
+                    </div>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="useGradient" checked>
+                        <label for="useGradient">Use gradient background</label>
+                    </div>
+                    <div id="gradientColor2Wrapper" style="margin-top: 10px;">
+                        <label style="font-size: 0.8rem; color: #888;">Gradient End Color</label>
+                        <input type="color" id="bgColor2" value="#764ba2">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Caption Text</label>
+                    <div class="text-controls">
+                        <input type="text" id="captionText" placeholder="Your amazing feature">
+                        <select id="captionPosition">
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                        </select>
+                        <input type="color" id="textColor" value="#ffffff">
+                    </div>
+                    <div class="range-wrapper" style="margin-top: 10px;">
+                        <label style="font-size: 0.8rem; color: #888; min-width: 80px;">Font Size</label>
+                        <input type="range" id="fontSize" min="24" max="120" value="64">
+                        <span class="range-value" id="fontSizeValue">64px</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Device Frame</label>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="showFrame" checked>
+                        <label for="showFrame">Show device frame</label>
+                    </div>
+                    <div class="range-wrapper" style="margin-top: 10px;">
+                        <label style="font-size: 0.8rem; color: #888; min-width: 80px;">Screenshot Scale</label>
+                        <input type="range" id="screenshotScale" min="50" max="95" value="75">
+                        <span class="range-value" id="scaleValue">75%</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="downloadBtn">Download Screenshot</button>
+                <button class="btn btn-secondary" id="downloadAllBtn">Download All Sizes</button>
+
+                <div class="device-specs">
+                    <h4>Current Requirements</h4>
+                    <ul id="specsList">
+                        <li>Size: 1320 x 2868 px</li>
+                        <li>Max file size: 10 MB (iOS)</li>
+                        <li>Format: PNG recommended</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <div class="preview-header">
+                    <span class="preview-title">Preview</span>
+                    <span class="dimensions-badge" id="dimensionsBadge">1320 x 2868</span>
+                </div>
+                <div class="preview-container">
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Device configurations
+        const devices = {
+            'iphone-6.9': { width: 1320, height: 2868, name: 'iPhone 6.9"', platform: 'ios', frameRadius: 80 },
+            'iphone-16-pro-max': { width: 1260, height: 2736, name: 'iPhone 16 Pro Max', platform: 'ios', frameRadius: 75 },
+            'iphone-6.7': { width: 1290, height: 2796, name: 'iPhone 6.7"', platform: 'ios', frameRadius: 75 },
+            'iphone-6.5': { width: 1284, height: 2778, name: 'iPhone 6.5"', platform: 'ios', frameRadius: 70 },
+            'iphone-5.5': { width: 1242, height: 2208, name: 'iPhone 5.5"', platform: 'ios', frameRadius: 0 },
+            'ipad-13': { width: 2064, height: 2752, name: 'iPad 13"', platform: 'ios', frameRadius: 40 },
+            'ipad-12.9': { width: 2048, height: 2732, name: 'iPad 12.9"', platform: 'ios', frameRadius: 40 },
+            'ipad-11': { width: 1668, height: 2388, name: 'iPad 11"', platform: 'ios', frameRadius: 35 },
+            'android-phone': { width: 1080, height: 2340, name: 'Android Phone', platform: 'android', frameRadius: 50 },
+            'android-tablet': { width: 1600, height: 2560, name: 'Android Tablet', platform: 'android', frameRadius: 30 }
+        };
+
+        // DOM Elements
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const deviceSelect = document.getElementById('deviceSelect');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const bgColor = document.getElementById('bgColor');
+        const bgColor2 = document.getElementById('bgColor2');
+        const useGradient = document.getElementById('useGradient');
+        const captionText = document.getElementById('captionText');
+        const captionPosition = document.getElementById('captionPosition');
+        const textColor = document.getElementById('textColor');
+        const fontSize = document.getElementById('fontSize');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const showFrame = document.getElementById('showFrame');
+        const screenshotScale = document.getElementById('screenshotScale');
+        const scaleValue = document.getElementById('scaleValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const dimensionsBadge = document.getElementById('dimensionsBadge');
+        const specsList = document.getElementById('specsList');
+        const gradientColor2Wrapper = document.getElementById('gradientColor2Wrapper');
+
+        let uploadedImage = null;
+
+        // Initialize
+        function init() {
+            updateCanvas();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            deviceSelect.addEventListener('change', () => {
+                updateSpecs();
+                updateCanvas();
+            });
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            [bgColor, bgColor2, textColor].forEach(el => {
+                el.addEventListener('input', updateCanvas);
+            });
+
+            [useGradient, showFrame].forEach(el => {
+                el.addEventListener('change', () => {
+                    if (el === useGradient) {
+                        gradientColor2Wrapper.style.display = useGradient.checked ? 'block' : 'none';
+                    }
+                    updateCanvas();
+                });
+            });
+
+            [captionText, captionPosition].forEach(el => {
+                el.addEventListener('input', updateCanvas);
+                el.addEventListener('change', updateCanvas);
+            });
+
+            fontSize.addEventListener('input', () => {
+                fontSizeValue.textContent = fontSize.value + 'px';
+                updateCanvas();
+            });
+
+            screenshotScale.addEventListener('input', () => {
+                scaleValue.textContent = screenshotScale.value + '%';
+                updateCanvas();
+            });
+
+            document.querySelectorAll('.preset-color').forEach(el => {
+                el.addEventListener('click', () => {
+                    bgColor.value = el.dataset.color;
+                    updateCanvas();
+                });
+            });
+
+            downloadBtn.addEventListener('click', downloadScreenshot);
+            downloadAllBtn.addEventListener('click', downloadAllSizes);
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    uploadArea.innerHTML = '<div class="upload-icon">✅</div><div class="upload-text">Image loaded! Click to change</div>';
+                    updateCanvas();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateSpecs() {
+            const device = devices[deviceSelect.value];
+            dimensionsBadge.textContent = `${device.width} x ${device.height}`;
+
+            const maxSize = device.platform === 'ios' ? '10 MB' : '8 MB';
+            specsList.innerHTML = `
+                <li>Size: ${device.width} x ${device.height} px</li>
+                <li>Max file size: ${maxSize}</li>
+                <li>Format: PNG recommended</li>
+                <li>Platform: ${device.platform === 'ios' ? 'iOS App Store' : 'Google Play'}</li>
+            `;
+        }
+
+        function updateCanvas() {
+            const device = devices[deviceSelect.value];
+            canvas.width = device.width;
+            canvas.height = device.height;
+
+            // Draw background
+            if (useGradient.checked) {
+                const gradient = ctx.createLinearGradient(0, 0, device.width, device.height);
+                gradient.addColorStop(0, bgColor.value);
+                gradient.addColorStop(1, bgColor2.value);
+                ctx.fillStyle = gradient;
+            } else {
+                ctx.fillStyle = bgColor.value;
+            }
+            ctx.fillRect(0, 0, device.width, device.height);
+
+            // Calculate screenshot area
+            const scale = screenshotScale.value / 100;
+            const frameWidth = device.width * scale;
+            const frameHeight = device.height * scale * 0.7;
+            const frameX = (device.width - frameWidth) / 2;
+            const frameY = captionPosition.value === 'top'
+                ? device.height - frameHeight - (device.height * 0.08)
+                : device.height * 0.2;
+
+            // Draw device frame
+            if (showFrame.checked) {
+                drawDeviceFrame(frameX, frameY, frameWidth, frameHeight, device);
+            }
+
+            // Draw uploaded image
+            if (uploadedImage) {
+                const padding = showFrame.checked ? 8 : 0;
+                const radius = showFrame.checked ? device.frameRadius * (scale * 0.8) : 0;
+
+                ctx.save();
+                roundedRect(ctx, frameX + padding, frameY + padding, frameWidth - padding * 2, frameHeight - padding * 2, radius);
+                ctx.clip();
+
+                // Scale image to fit
+                const imgAspect = uploadedImage.width / uploadedImage.height;
+                const frameAspect = (frameWidth - padding * 2) / (frameHeight - padding * 2);
+
+                let drawWidth, drawHeight, drawX, drawY;
+
+                if (imgAspect > frameAspect) {
+                    drawHeight = frameHeight - padding * 2;
+                    drawWidth = drawHeight * imgAspect;
+                    drawX = frameX + padding + ((frameWidth - padding * 2) - drawWidth) / 2;
+                    drawY = frameY + padding;
+                } else {
+                    drawWidth = frameWidth - padding * 2;
+                    drawHeight = drawWidth / imgAspect;
+                    drawX = frameX + padding;
+                    drawY = frameY + padding + ((frameHeight - padding * 2) - drawHeight) / 2;
+                }
+
+                ctx.drawImage(uploadedImage, drawX, drawY, drawWidth, drawHeight);
+                ctx.restore();
+            } else {
+                // Draw placeholder
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                const radius = showFrame.checked ? device.frameRadius * (scale * 0.8) : 0;
+                roundedRect(ctx, frameX + 8, frameY + 8, frameWidth - 16, frameHeight - 16, radius);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = `${Math.floor(device.width * 0.03)}px -apple-system, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('Upload your screenshot', device.width / 2, frameY + frameHeight / 2);
+            }
+
+            // Draw caption
+            if (captionText.value) {
+                const textY = captionPosition.value === 'top'
+                    ? device.height * 0.12
+                    : device.height - (device.height * 0.06);
+
+                ctx.fillStyle = textColor.value;
+                ctx.font = `bold ${fontSize.value}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Add text shadow for better readability
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                // Word wrap if needed
+                const maxWidth = device.width * 0.85;
+                wrapText(ctx, captionText.value, device.width / 2, textY, maxWidth, parseInt(fontSize.value) * 1.2);
+
+                ctx.shadowColor = 'transparent';
+            }
+        }
+
+        function drawDeviceFrame(x, y, width, height, device) {
+            const radius = device.frameRadius * (screenshotScale.value / 100);
+
+            // Outer frame (device bezel)
+            ctx.fillStyle = '#1a1a1a';
+            roundedRect(ctx, x - 4, y - 4, width + 8, height + 8, radius + 4);
+            ctx.fill();
+
+            // Inner frame highlight
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 2;
+            roundedRect(ctx, x, y, width, height, radius);
+            ctx.stroke();
+
+            // Screen bezel
+            ctx.fillStyle = '#000';
+            roundedRect(ctx, x, y, width, height, radius);
+            ctx.fill();
+
+            // Notch for iPhone (if applicable)
+            if (device.platform === 'ios' && device.frameRadius > 50) {
+                const notchWidth = width * 0.35;
+                const notchHeight = height * 0.035;
+                const notchX = x + (width - notchWidth) / 2;
+                const notchY = y;
+
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.moveTo(notchX, notchY);
+                ctx.lineTo(notchX + notchWidth, notchY);
+                ctx.lineTo(notchX + notchWidth - notchHeight, notchY + notchHeight);
+                ctx.quadraticCurveTo(notchX + notchWidth / 2, notchY + notchHeight * 1.2, notchX + notchHeight, notchY + notchHeight);
+                ctx.lineTo(notchX, notchY);
+                ctx.fill();
+            }
+        }
+
+        function roundedRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let lines = [];
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    lines.push(line);
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+
+            const totalHeight = lines.length * lineHeight;
+            const startY = y - totalHeight / 2 + lineHeight / 2;
+
+            lines.forEach((line, i) => {
+                ctx.fillText(line.trim(), x, startY + i * lineHeight);
+            });
+        }
+
+        function downloadScreenshot() {
+            const device = devices[deviceSelect.value];
+            const link = document.createElement('a');
+            link.download = `screenshot_${device.name.replace(/[^a-z0-9]/gi, '_')}_${device.width}x${device.height}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        async function downloadAllSizes() {
+            const currentDevice = deviceSelect.value;
+            const iosPhones = ['iphone-6.9', 'iphone-6.7', 'iphone-5.5'];
+
+            for (const deviceId of iosPhones) {
+                deviceSelect.value = deviceId;
+                updateSpecs();
+                updateCanvas();
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const device = devices[deviceId];
+                const link = document.createElement('a');
+                link.download = `screenshot_${device.name.replace(/[^a-z0-9]/gi, '_')}_${device.width}x${device.height}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Restore original selection
+            deviceSelect.value = currentDevice;
+            updateSpecs();
+            updateCanvas();
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
